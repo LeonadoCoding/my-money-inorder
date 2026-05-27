@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { CategoryManager } from "@/components/CategoryManager";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -27,7 +28,7 @@ function SettingsPage() {
   };
 
   return (
-    <div className="p-8 space-y-6 max-w-2xl">
+    <div className="p-8 space-y-6 max-w-4xl">
       <div>
         <h1 className="text-3xl font-bold">Configurações</h1>
         <p className="text-muted-foreground">Perfil e preferências</p>
@@ -49,6 +50,8 @@ function SettingsPage() {
         </div>
         <Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
       </Card>
+      <CategoryManager />
+
 
       {isAdmin && (
         <Card className="p-6 bg-gold/10 border-gold/30">
