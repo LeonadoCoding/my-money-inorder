@@ -50,6 +50,8 @@ function SettingsPage() {
         </div>
         <Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
       </Card>
+      <CategoryManager />
+
 
       {isAdmin && (
         <Card className="p-6 bg-gold/10 border-gold/30">
