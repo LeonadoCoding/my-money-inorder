@@ -28,7 +28,7 @@ function SettingsPage() {
   };
 
   return (
-    <div className="p-8 space-y-6 max-w-2xl">
+    <div className="p-8 space-y-6 max-w-4xl">
       <div>
         <h1 className="text-3xl font-bold">Configurações</h1>
         <p className="text-muted-foreground">Perfil e preferências</p>
