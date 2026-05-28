@@ -8,11 +8,23 @@ type AuthCtx = {
   loading: boolean;
   isAdmin: boolean;
   displayName: string | null;
+  theme: string;
+  themesAllowed: boolean;
+  setTheme: (t: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshRole: () => Promise<void>;
 };
 
 const Ctx = createContext<AuthCtx | undefined>(undefined);
+
+const THEME_CLASSES = ["theme-emerald", "theme-midnight", "theme-sunset", "theme-arctic", "theme-noir"];
+
+function applyTheme(theme: string) {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  THEME_CLASSES.forEach((c) => root.classList.remove(c));
+  root.classList.add(`theme-${theme}`);
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -20,14 +32,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [theme, setThemeState] = useState<string>("emerald");
+  const [themesAllowed, setThemesAllowed] = useState(true);
 
   const loadProfile = async (uid: string) => {
     const [{ data: roles }, { data: profile }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", uid),
-      supabase.from("profiles").select("display_name").eq("id", uid).maybeSingle(),
+      supabase.from("profiles").select("display_name, theme, themes_allowed").eq("id", uid).maybeSingle(),
     ]);
     setIsAdmin(!!roles?.some((r) => r.role === "admin"));
     setDisplayName(profile?.display_name ?? null);
+    const t = (profile as any)?.theme ?? "emerald";
+    const allowed = (profile as any)?.themes_allowed ?? true;
+    setThemeState(t);
+    setThemesAllowed(allowed);
+    applyTheme(allowed ? t : "emerald");
   };
 
   useEffect(() => {
@@ -39,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setIsAdmin(false);
         setDisplayName(null);
+        applyTheme("emerald");
       }
     });
     supabase.auth.getSession().then(({ data }) => {
@@ -50,6 +70,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const setTheme = async (t: string) => {
+    if (!user) return;
+    if (!themesAllowed) return;
+    setThemeState(t);
+    applyTheme(t);
+    await supabase.from("profiles").update({ theme: t }).eq("id", user.id);
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
@@ -59,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user, session, loading, isAdmin, displayName, signOut, refreshRole }}>
+    <Ctx.Provider value={{ user, session, loading, isAdmin, displayName, theme, themesAllowed, setTheme, signOut, refreshRole }}>
       {children}
     </Ctx.Provider>
   );
