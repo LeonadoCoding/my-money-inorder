@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           color: string | null
@@ -47,24 +65,66 @@ export type Database = {
         }
         Relationships: []
       }
+      installment_purchases: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          installments_count: number
+          start_date: string
+          total_amount: number
+          user_id: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          installments_count: number
+          start_date?: string
+          total_amount: number
+          user_id: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          installments_count?: number
+          start_date?: string
+          total_amount?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           active: boolean
           created_at: string
           display_name: string | null
           id: string
+          theme: string
+          themes_allowed: boolean
         }
         Insert: {
           active?: boolean
           created_at?: string
           display_name?: string | null
           id: string
+          theme?: string
+          themes_allowed?: boolean
         }
         Update: {
           active?: boolean
           created_at?: string
           display_name?: string | null
           id?: string
+          theme?: string
+          themes_allowed?: boolean
         }
         Relationships: []
       }
@@ -76,6 +136,8 @@ export type Database = {
           currency: string
           description: string | null
           id: string
+          installment_number: number | null
+          installment_purchase_id: string | null
           occurred_at: string
           source: Database["public"]["Enums"]["payment_source"]
           type: Database["public"]["Enums"]["transaction_type"]
@@ -88,6 +150,8 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          installment_number?: number | null
+          installment_purchase_id?: string | null
           occurred_at?: string
           source?: Database["public"]["Enums"]["payment_source"]
           type: Database["public"]["Enums"]["transaction_type"]
@@ -100,6 +164,8 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          installment_number?: number | null
+          installment_purchase_id?: string | null
           occurred_at?: string
           source?: Database["public"]["Enums"]["payment_source"]
           type?: Database["public"]["Enums"]["transaction_type"]
@@ -111,6 +177,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_installment_purchase_id_fkey"
+            columns: ["installment_purchase_id"]
+            isOneToOne: false
+            referencedRelation: "installment_purchases"
             referencedColumns: ["id"]
           },
         ]
@@ -159,6 +232,7 @@ export type Database = {
         | "transferencia"
         | "boleto"
         | "outro"
+        | "credito_parcelado"
       transaction_type: "expense" | "income"
     }
     CompositeTypes: {
@@ -296,6 +370,7 @@ export const Constants = {
         "transferencia",
         "boleto",
         "outro",
+        "credito_parcelado",
       ],
       transaction_type: ["expense", "income"],
     },
