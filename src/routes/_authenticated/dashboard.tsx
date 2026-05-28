@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
-import { listTransactions, formatCurrency } from "@/lib/finance";
-import { TrendingUp, TrendingDown, Wallet, Calendar } from "lucide-react";
+import { listTransactions, formatCurrency, computeInstallmentStats } from "@/lib/finance";
+import { TrendingUp, TrendingDown, Wallet, Calendar, CreditCard, CheckCircle2, Clock } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
 import { useMemo } from "react";
+import { Progress } from "@/components/ui/progress";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -48,9 +49,12 @@ function Dashboard() {
 
     const months = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month)).slice(-6);
     const cats = Object.values(byCat).sort((a, b) => b.value - a.value);
+    const inst = computeInstallmentStats(txs);
 
-    return { monthExp, monthInc, yearExp, yearInc, cats, months };
+    return { monthExp, monthInc, yearExp, yearInc, cats, months, inst };
   }, [txs]);
+
+  const paidPct = stats.inst.totalAmount > 0 ? (stats.inst.paidAmount / stats.inst.totalAmount) * 100 : 0;
 
   return (
     <div className="p-8 space-y-6">
@@ -65,6 +69,37 @@ function Dashboard() {
         <Kpi title="Saldo do mês" value={stats.monthInc - stats.monthExp} icon={Wallet} tone="primary" />
         <Kpi title="Saldo do ano" value={stats.yearInc - stats.yearExp} icon={Calendar} tone="gold" />
       </div>
+
+      {/* Installment section */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="font-semibold flex items-center gap-2">
+              <CreditCard className="size-5 text-primary" />
+              Compras parceladas
+            </h2>
+            <p className="text-sm text-muted-foreground">Acompanhamento de parcelas pagas e em aberto</p>
+          </div>
+        </div>
+        {stats.inst.totalCount === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">Nenhuma compra parcelada registrada</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <MiniKpi label="Total parcelado" value={formatCurrency(stats.inst.totalAmount)} hint={`${stats.inst.totalCount} parcelas`} icon={CreditCard} tone="primary" />
+              <MiniKpi label="Parcelas pagas" value={formatCurrency(stats.inst.paidAmount)} hint={`${stats.inst.paidCount} de ${stats.inst.totalCount}`} icon={CheckCircle2} tone="success" />
+              <MiniKpi label="Parcelas a pagar" value={formatCurrency(stats.inst.remainingAmount)} hint={`${stats.inst.remainingCount} restantes`} icon={Clock} tone="gold" />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Progresso de pagamento</span>
+                <span>{paidPct.toFixed(0)}%</span>
+              </div>
+              <Progress value={paidPct} />
+            </div>
+          </>
+        )}
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
@@ -129,5 +164,27 @@ function Kpi({ title, value, icon: Icon, tone }: { title: string; value: number;
         </div>
       </div>
     </Card>
+  );
+}
+
+function MiniKpi({ label, value, hint, icon: Icon, tone }: { label: string; value: string; hint: string; icon: any; tone: "success" | "primary" | "gold" }) {
+  const toneClass = {
+    success: "text-success bg-success/10",
+    primary: "text-primary bg-primary/10",
+    gold: "text-gold-foreground bg-gold/20",
+  }[tone];
+  return (
+    <div className="rounded-lg border border-border p-4 bg-card">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-xl font-bold mt-1">{value}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
+        </div>
+        <div className={`p-2 rounded-md ${toneClass}`}>
+          <Icon className="size-4" />
+        </div>
+      </div>
+    </div>
   );
 }
